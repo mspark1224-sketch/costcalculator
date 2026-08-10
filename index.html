@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>제품 원가 견적 시스템</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  </head>
+<body>
+  <div id="loginPage" style="display:flex; height:100vh; align-items:center; justify-content:center;">
+  <div style="width:300px; padding:30px; border:1px solid #ddd; border-radius:10px; background:#fff;">
+    <h2 style="text-align:center;">🔐 로그인</h2>
+    
+    <input id="loginId" type="text" placeholder="아이디" style="width:100%; margin-bottom:10px; height:36px;">
+    <input id="loginPw" type="password" placeholder="비밀번호" style="width:100%; margin-bottom:15px; height:36px;">
+    
+    <button onclick="login()" style="width:100%; height:40px;">로그인</button>
+  </div>
+</div>
+
+  <div id="mainPage" style="display:none;">
+
+  <div class="container">
+     <div style="display:flex; justify-content:space-between; align-items:center;">
+      <h1>제품 원가 견적 시스템</h1>
+      <button onclick="logout()">로그아웃</button>
+    </div>
+ 
+  <div class="menu">
+  <button type="button" onclick="showPage('db')">1 원재료 DB</button>
+  <button type="button" onclick="showPage('subDb')">2 부재료 DB</button>
+  <button type="button" onclick="showPage('recipe')">3 배합표</button>
+  <button type="button" onclick="showPage('calc')">4 원가 계산</button>
+  <button type="button" onclick="showPage('history')">5 견적 조회</button>
+</div>
+
+    <!-- ===================== -->
+    <!-- 원재료 DB -->
+    <!-- ===================== -->
+    <div id="db" class="page">
+      <h2>원재료 데이터베이스</h2>
+
+      <!-- 원재료 등록 -->
+      <div class="card db-top-card">
+        <h3 class="section-title">원재료 등록</h3>
+
+        <div class="material-form-row">
+
+          <div class="field field-code">
+            <label for="materialCode">원재료 코드</label>
+            <input id="materialCode" type="text" />
+          </div>
+
+          <div class="field field-name">
+            <label for="materialName">원재료 이름</label>
+            <input id="materialName" type="text" />
+          </div>
+
+          <div class="field field-price">
+            <label for="materialPrice">단가 (원/kg)</label>
+            <input id="materialPrice" type="number" />
+          </div>
+
+          <div class="field field-date">
+            <label for="materialDate">적용 날짜</label>
+            <input id="materialDate" type="date" />
+          </div>
+
+          <div class="action-group material-action-group">
+            <button type="button" onclick="saveMaterial()">저장</button>
+            <button type="button" class="secondary" onclick="clearMaterialInputs()">초기화</button>
+          </div>
+
+          <div class="upload-group material-upload-group">
+            <div class="file-input-wrap">
+              <input id="excelFile" type="file" accept=".xlsx,.xls,.csv" />
+            </div>
+            <button type="button" class="upload-btn" onclick="handleExcelUpload()">업로드</button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- 원재료 검색 -->
+      <div class="card db-list-card">
+        <h3 class="section-title">원재료 검색 (최신)</h3>
+
+        <div class="search-row material-search-row">
+          <input
+            id="materialSearch"
+            type="text"
+            placeholder="원재료명 또는 코드 검색"
+            oninput="loadMaterials()"
+          />
+          <button type="button" onclick="loadMaterials()">검색</button>
+          <button type="button" class="secondary" onclick="document.getElementById('materialSearch').value=''; loadMaterials();">전체</button>
+        </div>
+
+        <div class="table-wrap">
+          <table class="data-table material-table">
+            <thead>
+              <tr>
+                <th class="col-no">No</th>
+                <th class="col-code">코드</th>
+                <th class="col-name">이름</th>
+                <th class="col-price">단가</th>
+                <th class="col-date">적용일</th>
+                <th class="col-action center">수정</th>
+                <th class="col-action center">삭제</th>
+              </tr>
+            </thead>
+            <tbody id="materialList"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 가격 히스토리 -->
+ <div class="card db-history-card">
+
+  <h3 class="section-title">가격 히스토리</h3>
+
+  <div class="search-row history-search-row">
+    <input id="priceSearch" type="text" placeholder="원재료명 또는 코드 검색" />
+    <button onclick="searchPriceHistory()">검색</button>
+    <button onclick="loadPriceHistory('')">전체</button>
+  </div>
+
+  <div class="table-wrap">
+    <table class="data-table history-table">
+   <thead>
+  <tr>
+    <th>코드</th>
+    <th>이름</th>
+    <th>단가</th>
+    <th>적용일</th>
+  </tr>
+</thead>
+      <tbody id="priceHistoryTable"></tbody>
+    </table>
+  </div>
+
+</div>
+</div>
+<!-- ===================== -->
+<!-- 부재료 DB -->
+<!-- ===================== -->
+<div id="subDb" class="page" style="display:none;">
+  <h2>부재료 데이터베이스</h2>
+
+  <!-- 부재료 등록 -->
+  <div class="card db-top-card">
+    <h3 class="section-title">부재료 등록</h3>
+
+    <div class="material-form-row">
+
+      <div class="field field-code">
+        <label for="subMaterialCode">부재료 코드</label>
+        <input id="subMaterialCode" type="text" />
+      </div>
+
+      <div class="field field-name">
+        <label for="subMaterialName">부재료 이름</label>
+        <input id="subMaterialName" type="text" />
+      </div>
+
+      <div class="field field-price">
+        <label for="subMaterialPrice">단가 (원/ea)</label>
+        <input id="subMaterialPrice" type="number" />
+      </div>
+
+      <div class="field field-date">
+        <label for="subMaterialDate">적용 날짜</label>
+        <input id="subMaterialDate" type="date" />
+      </div>
+
+      <div class="action-group material-action-group">
+        <button type="button" onclick="saveSubMaterial()">저장</button>
+        <button type="button" class="secondary" onclick="clearSubMaterialInputs()">초기화</button>
+      </div>
+
+      <div class="upload-group material-upload-group">
+        <div class="file-input-wrap">
+          <input id="subExcelFile" type="file" accept=".xlsx,.xls,.csv" />
+        </div>
+        <button type="button" class="upload-btn" onclick="handleSubExcelUpload()">업로드</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 부재료 검색 -->
+  <div class="card db-list-card">
+    <h3 class="section-title">부재료 검색 (최신)</h3>
+
+    <div class="search-row material-search-row">
+      <input
+        id="subMaterialSearch"
+        type="text"
+        placeholder="부재료명 또는 코드 검색"
+        oninput="loadSubMaterials()"
+      />
+      <button type="button" onclick="loadSubMaterials()">검색</button>
+      <button type="button" class="secondary" onclick="document.getElementById('subMaterialSearch').value=''; loadSubMaterials();">전체</button>
+    </div>
+
+    <div class="table-wrap">
+      <table class="data-table material-table">
+        <thead>
+          <tr>
+            <th class="col-no">No</th>
+            <th class="col-code">코드</th>
+            <th class="col-name">이름</th>
+            <th class="col-price">단가</th>
+            <th class="col-date">적용일</th>
+            <th class="col-action center">수정</th>
+            <th class="col-action center">삭제</th>
+          </tr>
+        </thead>
+        <tbody id="subMaterialList"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 가격 히스토리 -->
+  <div class="card db-history-card">
+
+    <h3 class="section-title">가격 히스토리</h3>
+
+    <div class="search-row history-search-row">
+      <input id="subPriceSearch" type="text" placeholder="부재료명 또는 코드 검색" />
+      <button onclick="searchSubPriceHistory()">검색</button>
+      <button onclick="loadSubPriceHistory('')">전체</button>
+    </div>
+
+    <div class="table-wrap">
+      <table class="data-table history-table">
+        <thead>
+          <tr>
+            <th>코드</th>
+            <th>이름</th>
+            <th>단가</th>
+            <th>적용일</th>
+            <th>삭제</th>
+          </tr>
+        </thead>
+        <tbody id="subPriceHistoryTable"></tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+    
+    <!-- ===================== -->
+    <!-- 배합표 -->
+    <!-- ===================== -->
+<div id="recipe" class="page" style="display:none;">
+  <h2>배합표 작성</h2>
+
+  <!-- 제품 등록 -->
+  <div class="card">
+    <h3 class="section-title">제품 등록</h3>
+
+    <div class="product-box">
+      <div class="product-inline">
+
+        <div class="field field-type">
+          <label for="productType">유형</label>
+          <select id="productType">
+            <option value="">선택</option>
+            <option value="가공치즈">가공치즈</option>
+            <option value="치즈">치즈</option>
+            <option value="발효유">발효유</option>
+            <option value="농후발효유">농후발효유</option>
+            <option value="가공유">가공유</option>
+            <option value="우유">우유</option>
+            <option value="아이스밀크믹스">아이스밀크믹스</option>
+          </select>
+        </div>
+
+        <div class="field field-name">
+          <label for="productName">제품명</label>
+          <input id="productName" type="text" />
+        </div>
+
+        <div class="field mini-col">
+          <label>내용량</label>
+          <input id="productVolume" type="number" placeholder="입력" oninput="updateUnitCost()" />
+        </div>
+
+        <div class="field mini-col">
+          <label>단위</label>
+          <select id="productUnit" onchange="updateUnitCost()">
+            <option value="g">g</option>
+            <option value="ml">ml</option>
+          </select>
+        </div>
+
+        <div class="field mini-col">
+          <label>비중</label>
+          <input id="productDensity" type="number" step="0.001" value="1" oninput="updateUnitCost()" />
+        </div>
+
+      </div>
+    </div>
+
+    <div class="button-row">
+      <button type="button" onclick="addRecipe()">원재료 추가</button>
+      <button type="button" onclick="resetRecipeTable()">초기화</button>
+    </div>
+
+    <table id="recipeTable">
+      <thead>
+        <tr>
+          <th style="width:200px;">원재료</th>
+          <th style="width:60px;">코드</th>
+          <th style="width:160px;">단가</th>
+          <th style="width:100px;">배합비</th>
+          <th style="width:160px;">원가(원/kg)</th>
+          <th style="width:60px;" class="center">삭제</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+      <tfoot>
+        <tr>
+          <td colspan="3"><strong>합계</strong></td>
+          <td id="ratioSum">0</td>
+          <td id="materialCostSum">0 원</td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+
+  
+
+    <!-- ✅ unit-cost 구조 정상화 -->
+    <div class="unit-cost-box">
+      <div class="unit-inline">
+          단위 원가
+          </span>
+
+          <span id="unitCostDisplay">0</span>
+
+          <span class="unit-suffix">
+          원 / ea
+          </span>
+      </div>
+    </div>
+
+    <div class="bottom-action">
+      <button type="button" onclick="saveRecipe()">제품 저장</button>
+    </div>
+  </div>
+
+  <!-- 제품 검색 -->
+  <div class="card">
+    <h3 class="section-title">제품 검색</h3>
+
+    <div class="product-top-bar">
+      <div class="left-group">
+        <input
+          id="productSearch"
+          type="text"
+          placeholder="제품 검색"
+          style="width:200px;"
+        />
+        <button onclick="loadProducts()">검색</button>
+      </div>
+
+      <div class="right-group">
+          <button type="button" onclick="exportSelectedProductExcel()">엑셀 다운로드</button>
+          <button type="button" onclick="deleteSelectedProducts()" class="danger">삭제</button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table class="data-table product-table">
+        <thead>
+          <tr>
+            <th style="width:60px;">선택</th>
+            <th>유형</th>
+            <th>제품명</th>
+            <th class="right">원가(원/kg)</th>
+            <th class="right">단위원가(원/ea)</th>
+            <th>날짜</th>
+          </tr>
+        </thead>
+        <tbody id="recipeProductList"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+    
+    <!-- ===================== -->
+    <!-- 원가 계산 -->
+    <!-- ===================== -->
+    <div id="calc" class="page" style="display:none;">
+      <h2>배치별 실제원가 계산</h2>
+
+      <div class="card calc-form-card">
+        <h3 class="section-title">1. 생산 기본정보</h3>
+        <div class="calc-grid">
+          <div class="field">
+            <label for="calcProductSelect">제품 선택</label>
+            <select id="calcProductSelect" onchange="loadMaterialCostFromProduct()">
+              <option value="">선택</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="batchDate">생산일</label>
+            <input id="batchDate" type="date" />
+          </div>
+          <div class="field">
+            <label for="batchNo">배치번호</label>
+            <input id="batchNo" type="text" placeholder="예: A-260810-01" />
+          </div>
+          <div class="field">
+            <label for="actualInputKg">실제 총 투입량(kg)</label>
+            <input id="actualInputKg" type="number" min="0" step="0.001" />
+          </div>
+          <div class="field">
+            <label for="goodOutputKg">정상 완제품 생산량(kg)</label>
+            <input id="goodOutputKg" type="number" min="0" step="0.001" />
+          </div>
+        </div>
+      </div>
+
+      <div class="card calc-form-card">
+        <h3 class="section-title">2. 재료비 및 로스</h3>
+        <div class="calc-grid">
+          <div class="field">
+            <label for="materialCostInput">원재료비(원/kg, 배합표 자동)</label>
+            <input id="materialCostInput" type="number" readonly />
+          </div>
+          <div class="field">
+            <label for="materialLossRate">원료 로스율(%)</label>
+            <input id="materialLossRate" type="number" min="0" max="99.99" step="0.01" value="0" />
+          </div>
+          <div class="field">
+            <label for="subMaterialCostInput">부재료비(원/kg)</label>
+            <input id="subMaterialCostInput" type="number" min="0" step="0.01" value="0" />
+          </div>
+          <div class="field">
+            <label for="subMaterialLossRate">부재료 로스율(%)</label>
+            <input id="subMaterialLossRate" type="number" min="0" max="99.99" step="0.01" value="0" />
+          </div>
+          <div class="field">
+            <label for="packagingCostInput">포장재비(원/kg)</label>
+            <input id="packagingCostInput" type="number" min="0" step="0.01" value="0" />
+          </div>
+        </div>
+      </div>
+
+      <div class="card calc-form-card">
+        <h3 class="section-title">3. 작업 및 제조 raw data</h3>
+        <div class="calc-grid">
+          <div class="field">
+            <label for="workerCount">작업 인원(명)</label>
+            <input id="workerCount" type="number" min="0" step="1" value="0" />
+          </div>
+          <div class="field">
+            <label for="workHours">인당 작업시간(시간)</label>
+            <input id="workHours" type="number" min="0" step="0.1" value="0" />
+          </div>
+          <div class="field">
+            <label for="hourlyLaborCost">인당 시간당 인건비(원)</label>
+            <input id="hourlyLaborCost" type="number" min="0" step="1" value="0" />
+          </div>
+          <div class="field">
+            <label for="lineHours">라인 가동시간(시간)</label>
+            <input id="lineHours" type="number" min="0" step="0.1" value="0" />
+          </div>
+          <div class="field">
+            <label for="hourlyMfgCost">시간당 제조경비(원)</label>
+            <input id="hourlyMfgCost" type="number" min="0" step="1" value="0" />
+          </div>
+          <div class="field">
+            <label for="logisticsCostInput">물류비(원/kg)</label>
+            <input id="logisticsCostInput" type="number" min="0" step="0.01" value="0" />
+          </div>
+          <div class="field">
+            <label for="otherCostInput">기타비용(원/kg)</label>
+            <input id="otherCostInput" type="number" min="0" step="0.01" value="0" />
+          </div>
+          <div class="field">
+            <label for="marginRate">목표 마진율(%)</label>
+            <input id="marginRate" type="number" min="0" max="99.99" step="0.01" value="0" />
+          </div>
+        </div>
+
+        <div class="button-row">
+          <button type="button" onclick="calculateActualCost()">계산</button>
+          <button type="button" onclick="saveActualCostRecord()">raw data 저장</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">4. 계산 결과</h3>
+        <p>제품명: <strong id="calcProductName">-</strong></p>
+        <p>로스 반영 원재료비: <strong><span id="materialCostText">0</span> 원/kg</strong></p>
+        <p>로스 반영 부재료비: <strong><span id="subMaterialCostText">0</span> 원/kg</strong></p>
+        <p>인건비: <strong><span id="laborCostText">0</span> 원/kg</strong></p>
+        <p>제조경비: <strong><span id="mfgCostText">0</span> 원/kg</strong></p>
+        <p>라인수율: <strong><span id="lineYieldText">0</span>%</strong></p>
+        <p>생산원가: <strong><span id="productionCostText">0</span> 원/kg</strong></p>
+        <p>정상제품 제조원가: <strong><span id="normalProductCostText">0</span> 원/kg</strong></p>
+        <p>총원가: <strong><span id="totalCostText">0</span> 원/kg</strong></p>
+        <p>견적가: <strong><span id="result">0</span> 원/kg</strong></p>
+      </div>
+
+      <div class="card">
+        <h3 class="section-title">5. 배치별 실제원가 raw data</h3>
+        <div class="search-row">
+          <input id="actualCostSearch" type="text" placeholder="제품명 또는 배치번호 검색" oninput="loadActualCostRecords()" />
+          <button type="button" onclick="loadActualCostRecords()">검색</button>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>생산일</th>
+                <th>배치번호</th>
+                <th>제품명</th>
+                <th>실제 투입량</th>
+                <th>정상 생산량</th>
+                <th>라인수율</th>
+                <th>총원가</th>
+                <th>견적가</th>
+                <th>삭제</th>
+              </tr>
+            </thead>
+            <tbody id="actualCostRecordList"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== -->
+    <!-- 견적 조회 -->
+    <!-- ===================== -->
+    <div id="history" class="page" style="display:none;">
+      <h2>견적 조회</h2>
+
+      <div class="card">
+        <div class="top-actions">
+  <button onclick="loadSelected()">선택 불러오기</button>
+  <button onclick="deleteSelected()">선택 삭제</button>
+</div>
+        <input
+          id="quoteSearch"
+          type="text"
+          placeholder="제품명 검색"
+          oninput="loadQuotes()"
+        />
+
+        <table>
+          <thead>
+            <tr>
+              <th style="width:40px;">
+  <input type="checkbox" id="selectAll" onclick="toggleAll(this)">
+</th>
+              <th>제품명</th>
+              <th>견적가</th>
+              <th>날짜</th>
+              <th>삭제</th>
+            </tr>
+          </thead>
+          <tbody id="quoteList"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="app.js"></script>
+</div>
+</body>
+</html>
