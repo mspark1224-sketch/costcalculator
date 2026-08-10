@@ -1,569 +1,225 @@
-/* ================= 기본 ================= */
+:root {
+  --navy: #10213f;
+  --navy-2: #1c355e;
+  --blue: #2563eb;
+  --bg: #f4f6f8;
+  --card: #ffffff;
+  --line: #dce2e9;
+  --line-soft: #edf0f4;
+  --muted: #64748b;
+  --danger: #ef4444;
+  --up-bg: #fff1f2;
+  --down-bg: #eff6ff;
+  --shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+* { box-sizing: border-box; }
+
 body {
-  font-family: Arial, sans-serif;
-  background: #f3f3f3;
   margin: 0;
-  padding: 0;
-  color: #111;
+  color: #172033;
+  background: var(--bg);
+  font-family: Pretendard, "Noto Sans KR", "Malgun Gothic", Arial, sans-serif;
+  font-size: 14px;
+}
+
+button, input, select { font: inherit; }
+
+button {
+  min-height: 36px;
+  padding: 0 15px;
+  color: #24324a;
+  background: #fff;
+  border: 1px solid #cfd7e2;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, transform .05s;
+}
+
+button:hover { background: #f8fafc; border-color: #aeb9c8; }
+button:active { transform: translateY(1px); }
+button.secondary { color: #526174; background: #f8fafc; }
+button.danger, .delete-btn { color: var(--danger); border-color: #fca5a5; background: #fff; }
+
+input, select {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  color: #172033;
+  background: #fff;
+  border: 1px solid #d3dae4;
+  border-radius: 7px;
+  outline: none;
+}
+
+input:focus, select:focus {
+  border-color: #7aa2e8;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, .08);
 }
 
 .container {
-  max-width: 1400px;
+  width: min(1440px, calc(100% - 56px));
   margin: 0 auto;
-  padding: 24px;
+  padding: 30px 0 60px;
 }
 
-h1 { font-size: 42px; font-weight: 800; margin-bottom: 20px; }
-h2 { 
-  font-size: 36px;   /* 🔥 1.5배 */
-  margin-bottom: 20px;
-  font-weight: 800;  /* 추가 추천 */
-  color: #2b2b2b;    /* 차콜 */
-}
-h3 { margin-bottom: 12px; }
+h1 { margin: 0 0 22px; color: #08162e; font-size: 34px; letter-spacing: -1.4px; }
+h2 { margin: 0 0 22px; color: var(--navy); font-size: 29px; letter-spacing: -.8px; }
+h3.section-title { margin: 0 0 22px; color: var(--navy); font-size: 22px; }
+h4 { margin: 0; color: var(--navy); font-size: 20px; letter-spacing: -.3px; }
 
-.section-title {
-  margin-bottom: 12px;
-  font-size: 24px;           /* 🔥 1.5배 260318 추가 */
-  font-weight: 800;          /* 🔥 더 진하게 260318 추가 */
-  color: #243a5e;               /* 🔥 회색444에서 네이비로 바꿈 260318 추가 */
-  letter-spacing: -0.3px;
-  font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
-}
+.menu { display: flex; gap: 8px; margin-bottom: 20px; }
+.menu button { min-height: 34px; padding: 0 14px; font-size: 13px; }
 
-.menu {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-bottom: 20px;
-}
-
-/* ================= 버튼 ================= */
-button {
-  height: 36px;
-  padding: 0 14px;
-  border: 1px solid #d1d5db;
-  background: linear-gradient(180deg, #ffffff 0%, #f3f4f6 100%);
-  color: #111827;
-  border-radius: 8px; /* 🔥 애플은 둥글게 */
-  cursor: pointer;
-  white-space: nowrap;
-  font-weight: 500;
-  font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
-
-  /* 🔥 애플 핵심: 부드러운 그림자 */
-  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
-  transition: all 0.15s ease;
-}
-
-/* hover */
-button:hover {
-  background: linear-gradient(180deg, #f9fafb 0%, #e5e7eb 100%);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-}
-
-/* 클릭 */
-button:active {
-  transform: scale(0.98);
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.08);
-}
-
-/* ================= 보조 버튼 ================= */
-button.secondary {
-  background: #ffffff;
-  color: #6b7280;
-  border: 1px solid #e5e7eb;
-}
-
-button.secondary:hover {
-  background: #f9fafb;
-  color: #374151;
-}
-
-/* ================= 삭제 버튼 ================= */
-button.danger {
-  background: #ffffff;
-  color: #dc2626;
-  border: 1px solid #fecaca;
-}
-
-button.danger:hover {
-  background: #fef2f2;
-  color: #b91c1c;
-}
-
-/* ================= 저장 버튼 (살짝 강조) ================= */
-.bottom-action {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 16px;
-}
-
-.bottom-action button {
-  min-width: 120px;
-
-  /* 🔥 애플 스타일 primary */
-  background: #111827;
-  color: #ffffff;
-  border: none;
-}
-
-.bottom-action button:hover {
-  background: #000000;
-}
-
-/* ================= 카드 ================= */
-.page {
-  display: none;
-  background: #f9fafb; /* 🔥 살짝 회색 (애플 느낌 핵심) */
-  padding: 28px;
-  border-radius: 16px;
-}
-
-/* 카드 */
+.page { padding: 28px; background: rgba(255,255,255,.4); border-radius: 16px; }
 .card {
-  background: #ffffff;
-  border: 1px solid #e5e7eb; /* 🔥 연한 보더 */
-  padding: 20px;
-  border-radius: 14px; /* 🔥 더 둥글게 */
-  margin: 20px 0;
-
-  /* 🔥 핵심: 부드러운 그림자 */
-  box-shadow: 
-    0 1px 2px rgba(0,0,0,0.04),
-    0 4px 12px rgba(0,0,0,0.04);
-
-  transition: all 0.2s ease;
+  margin-bottom: 20px;
+  padding: 24px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  box-shadow: var(--shadow);
 }
 
-/* hover 시 살짝 떠오르는 느낌 */
-.card:hover {
-  box-shadow: 
-    0 2px 6px rgba(0,0,0,0.06),
-    0 8px 20px rgba(0,0,0,0.06);
-}
+.field { min-width: 0; }
+.field label { display: block; margin: 0 0 8px; color: #27364e; font-size: 12px; font-weight: 700; }
 
-/* ================= 공통 ================= */
-
-/* 라벨 */
-label {
-  font-weight: 600;
-  margin-bottom: 6px;
-  color: #374151; /* 🔥 부드러운 텍스트 */
-  font-size: 13px;
-}
-
-/* 입력창 */
-input, select {
-  height: 36px;
-  padding: 6px 10px;
-  border: 1px solid #e5e7eb; /* 🔥 연한 보더 */
-  border-radius: 8px;
-  box-sizing: border-box;
-  width: 100%;
-  min-width: 0;
-  font-size: 14px;
-
-  /* 🔥 애플 느낌 */
-  background: #ffffff;
-  transition: all 0.15s ease;
-}
-
-/* focus 효과 (핵심🔥) */
-input:focus, select:focus {
-  outline: none;
-  border-color: #9ca3af;
-  box-shadow: 0 0 0 2px rgba(156, 163, 175, 0.2);
-}
-
-/* ================= 테이블 ================= */
-
-table {
-  width: 100%;
-  border-collapse: separate; /* 🔥 핵심 */
-  border-spacing: 0;
-  font-size: 14px;
-}
-
-/* 헤더 */
-th {
-  background: #f9fafb; /* 🔥 애플톤 */
-  color: #374151;
-  font-weight: 600;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-/* 셀 */
-th, td {
-  padding: 10px;
-  text-align: center;
-  vertical-align: middle;
-  border-bottom: 1px solid #f1f5f9; /* 🔥 라인 최소화 */
-}
-
-/* 행 hover */
-tbody tr:hover {
-  background-color: #f9fafb;
-}
-
-/* ================= 제품명 hover ================= */
-#productList td:hover {
-  background-color: #f3f4f6;
-  cursor: pointer;
-}
-
-/* ================= 정렬 ================= */
-.center {
-  text-align: center;
-}
-
-/* ================= 원재료 DB ================= */
-
-/* 🔥 전체 정렬 구조 */
-.material-form-row {
-  display: grid;
-  grid-template-columns:
-    110px   /* 코드 */
-    1fr     /* 이름 */
-    130px   /* 단가 */
-    160px   /* 날짜 */
-    auto    /* 버튼 */
-    280px;  /* 업로드 */
-
-  gap: 12px; /* 🔥 여백 살짝 확대 */
-  align-items: end;
-}
-
-/* 필드 */
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px; /* 🔥 label-input 간격 */
-}
-
-/* 버튼 그룹 */
-.material-action-group {
-  display: flex;
-  gap: 8px; /* 🔥 버튼 숨 쉴 공간 */
-  align-items: end;
-}
-
-/* 업로드 영역 */
-.material-upload-group {
-  display: flex;
-  gap: 8px;
-  align-items: end;
-}
-
-/* 파일 input */
-.file-input-wrap input[type="file"] {
-  height: 36px;
-  font-size: 12px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 4px;
-  background: #ffffff;
-}
-
-/* ================= 검색 ================= */
-.search-row {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 16px; /* 🔥 여유 추가 */
-  align-items: center;
-}
-
-/* 검색 input */
-.search-row input {
-  width: 260px;
-  border-radius: 8px;
-}
-
-/* ================= 테이블 ================= */
-.table-wrap {
-  width: 100%;
-  overflow-x: auto;
-}
-
-/* 🔥 테이블 전체 */
-.data-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  font-size: 14px;
-}
-
-/* 헤더 */
-.data-table th {
-  background: #f9fafb;
-  color: #374151;
-  font-weight: 600;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-/* 셀 */
-.data-table td {
-  border-bottom: 1px solid #f1f5f9;
-}
-
-/* 공통 정렬 */
-.data-table th,
-.data-table td {
-  text-align: center;
-  vertical-align: middle;
-  padding: 10px;
-}
-
-/* 🔥 hover 효과 */
-.data-table tbody tr:hover {
-  background-color: #f9fafb;
-}
-
-/* 🔥 첫/마지막 라운딩 (애플 느낌 핵심) */
-.data-table thead tr th:first-child {
-  border-top-left-radius: 10px;
-}
-.data-table thead tr th:last-child {
-  border-top-right-radius: 10px;
-}
-
-/* ================= 컬럼 폭 ================= */
-.col-no { width: 60px; }
-.col-code { width: 100px; }
-.col-price { width: 120px; }
-.col-date { width: 140px; }
-.col-action { width: 90px; }
-
-/* ================= 배합표 ================= */
-
-/* 상단 제품 입력 */
 .product-inline {
-  display: flex;
+  display: grid;
+  grid-template-columns: 170px minmax(280px, 1fr) 170px 90px 150px;
   gap: 14px;
   align-items: end;
 }
 
-.volume-summary {  
-  text-align: right;  
-  margin-top: 10px;  
-  font-size: 14px;  
-  color: #555;  
-}
-
-.field-type {
-  width: 180px;
-}
-
-.field-name {
-  flex: 1;
-}
-
-/* 버튼 */
-.button-row {
-  margin-top: 14px;
-  margin-bottom: 28px;
-  display: flex;
-  gap: 10px;
-}
-
-/* 요약 */
-.recipe-summary {
-  margin: 14px 0;
-  font-size: 15px;
-  color: #374151;
-}
-
-.unit-inline {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  font-size: 15px;
-}
-
-.unit-cost-box {
-  display: flex;
-  justify-content: center;   /* 가운데 정렬 핵심 */
-  margin-top: 12px;
-}
-
-.unit-inline #volumeDisplay {
-  font-weight: 600;
-  min-width: 100px;
-}
-
-.unit-inline .unit-label {
-  color: #666;
-}
-
-.unit-inline #unitCostDisplay {
-  font-weight: 700;
- }
-/* ================= 하단 계산 ================= */
-.bottom-row {
-  display: flex;
-  gap: 16px;
+.composition-section {
   margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line-soft);
 }
 
-/* 왼쪽 박스 */
-.left-box {
-  flex: 2;
-  border: 1px solid #e5e7eb; /* 🔥 연하게 */
-  padding: 16px;
-  border-radius: 12px;
-  background: #f9fafb; /* 🔥 애플톤 */
+.composition-heading { margin-bottom: 10px; }
+.composition-heading h4 { margin-bottom: 10px; }
+.button-row { display: flex; align-items: center; gap: 8px; }
+.compact-actions button { min-height: 34px; padding: 0 13px; }
 
-  /* 🔥 살짝 떠있는 느낌 */
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+table { width: 100%; border-collapse: collapse; }
+.table-wrap { width: 100%; overflow-x: auto; }
+
+th, td {
+  padding: 10px 12px;
+  text-align: center;
+  border-bottom: 1px solid var(--line-soft);
+  vertical-align: middle;
 }
 
-/* 입력 묶음 */
-.inline-group {
-  display: flex;
-  gap: 12px;
-  align-items: end;
+th {
+  color: #26364f;
+  background: #f7f9fb;
+  font-size: 12px;
+  font-weight: 750;
 }
 
-.inline-group input,
-.inline-group select {
-  width: 120px;
+.composition-table {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
 }
 
-.inline-group > div {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
+.composition-table td { height: 42px; }
+.composition-table tbody input { height: 32px; }
+.composition-table .material-input { min-width: 160px; }
+.composition-table .ratio-input { max-width: 110px; margin: auto; text-align: center; }
+.composition-table tfoot td { background: #fbfcfd; font-weight: 650; }
+.composition-table .delete-btn { min-height: 30px; padding: 0 11px; }
 
-/* 오른쪽 박스 */
-.right-box {
-  flex: 1;
-  border: 1px solid #e5e7eb;
-  padding: 16px;
-  border-radius: 12px;
-  background: #ffffff;
-
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-}
-
-/* 결과 영역 */
-.result-row {
-  display: flex;
-  gap: 10px;
-  align-items: end;
-}
-
-/* 제품 리스트 */
-.product-list-box {
-  margin-top: 24px;
-}
-
-/* ================= 제품 검색 테이블 ================= */
-.product-table th,
-.product-table td {
-  padding: 10px;
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.product-table th {
-  background: #f9fafb;
-  font-weight: 600;
-}
-
-/* 🔥 숫자 오른쪽 정렬 */
-.product-table td:nth-child(4),
-.product-table td:nth-child(5) {
+.section-subtotal {
+  padding: 12px 22px 2px;
   text-align: right;
-  padding-right: 12px;
+  color: #334155;
 }
+.section-subtotal strong { margin-left: 8px; color: var(--navy); font-size: 17px; }
 
-/* 체크박스 중앙 */
-.product-table td:nth-child(1) {
+.loss-panel {
+  margin-top: 24px;
+  padding: 18px 20px 14px;
+  background: #f7f9fc;
+  border: 1px solid #d7dee8;
+  border-radius: 10px;
+}
+.loss-panel h4 { margin-bottom: 14px; font-size: 17px; }
+
+.loss-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) 34px minmax(260px, 1fr) 34px minmax(130px, .65fr);
+  gap: 10px;
+  align-items: center;
+  max-width: 900px;
+  margin: 8px auto;
   text-align: center;
 }
 
-/* hover */
-.product-table tbody tr:hover {
-  background-color: #f9fafb;
-}
-/* ================= 원가 계산 ================= */
-.calc-form-card .calc-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+.loss-row input {
+  display: inline-block;
+  width: 82px;
+  height: 34px;
+  margin: 0 6px;
+  text-align: center;
+  background: #fff;
 }
 
-/* ================= 견적 ================= */
-#quoteSearch {
-  width: 250px;
-  margin-bottom: 10px;
+.loss-row > strong { color: var(--navy); font-size: 17px; }
+.product-material-total {
+  margin-top: 14px;
+  padding-top: 14px;
+  text-align: center;
+  color: var(--navy);
+  border-top: 1px solid #aeb9c8;
+  font-size: 19px;
+  font-weight: 700;
 }
+.product-material-total strong { margin-left: 10px; font-size: 25px; }
 
-/* ================= 상단 바 ================= */
-.product-top-bar {
+.bottom-action { display: flex; justify-content: flex-end; margin-top: 12px; }
+.bottom-action button { min-width: 140px; color: #fff; background: var(--navy); border-color: var(--navy); font-weight: 700; }
+.bottom-action button:hover { background: var(--navy-2); }
+
+.product-top-bar, .search-row, .top-actions {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 24px;
-  margin-bottom: 12px;
-  width: 100%;
-}
-
-/* 좌측 */
-.left-group {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-/* 우측 */
-.right-group {
-  display: flex;
   gap: 8px;
+  margin-bottom: 14px;
+}
+.left-group, .right-group { display: flex; align-items: center; gap: 8px; }
+.product-link { color: var(--blue); font-weight: 650; cursor: pointer; }
+.right { text-align: right; }
+.product-cost-cell { color: var(--navy); font-weight: 800; }
+.cost-change { display: block; margin-top: 3px; color: var(--danger); font-size: 11px; font-weight: 600; }
+.cost-up { background: var(--up-bg); }
+.cost-down { background: var(--down-bg); }
+
+.material-form-row, .calc-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(150px, 1fr));
+  gap: 14px;
+  align-items: end;
+}
+.action-group, .upload-group { display: flex; gap: 8px; align-items: end; }
+
+@media (max-width: 980px) {
+  .container { width: min(100% - 24px, 1440px); }
+  .page, .card { padding: 18px; }
+  .product-inline { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .material-form-row, .calc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .loss-row { grid-template-columns: 1fr; padding: 10px 0; border-bottom: 1px dashed var(--line); }
+  .menu { flex-wrap: wrap; }
 }
 
-/* 🔥 입력 자연스럽게 */
-#recipeTable td input {
-  width: 100%;
-  box-sizing: border-box;
-  text-align: center; /* 🔥 숫자 정렬 깔끔 */
-}
-
-/* ================= 반응형 ================= */
-@media (max-width: 900px) {
-
-  .material-form-row {
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-  }
-
-  .bottom-row {
-    flex-direction: column;
-    gap: 14px; /* 🔥 여백 추가 */
-  }
-
-  .product-inline {
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .calc-form-card .calc-grid {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-
-  /* 🔥 상단바 모바일 대응 */
-  .product-top-bar {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-  }
-
-  .left-group {
-    width: 100%;
-  }
-
-  .right-group {
-    justify-content: flex-end;
-  }
+@media (max-width: 620px) {
+  .container { width: calc(100% - 16px); padding-top: 16px; }
+  h1 { font-size: 26px; }
+  .page { padding: 12px; }
+  .product-inline, .material-form-row, .calc-grid { grid-template-columns: 1fr; }
+  .product-top-bar { align-items: stretch; flex-direction: column; }
+  .right-group { justify-content: flex-end; }
 }

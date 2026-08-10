@@ -304,48 +304,94 @@
       </div>
     </div>
 
-    <div class="button-row">
-      <button type="button" onclick="addRecipe()">원재료 추가</button>
-      <button type="button" onclick="resetRecipeTable()">초기화</button>
-    </div>
+    <section class="composition-section">
+      <div class="composition-heading">
+        <h4>원재료 구성</h4>
+        <div class="button-row compact-actions">
+          <button type="button" onclick="addRecipe()">원재료 추가</button>
+          <button type="button" class="secondary" onclick="resetRawRecipeTable()">원재료 초기화</button>
+        </div>
+      </div>
 
-    <table id="recipeTable">
+    <datalist id="rawMaterialOptions"></datalist>
+    <table id="recipeTable" class="composition-table">
       <thead>
         <tr>
           <th style="width:200px;">원재료</th>
           <th style="width:60px;">코드</th>
-          <th style="width:160px;">단가</th>
-          <th style="width:100px;">배합비</th>
-          <th style="width:160px;">원가(원/kg)</th>
+          <th style="width:160px;">단가(원/kg)</th>
+          <th style="width:100px;">배합비(%)</th>
+          <th style="width:160px;">원재료비(원/ea)</th>
           <th style="width:60px;" class="center">삭제</th>
         </tr>
       </thead>
       <tbody></tbody>
       <tfoot>
         <tr>
-          <td colspan="3"><strong>합계</strong></td>
+          <td colspan="3"><strong>원재료 합계</strong></td>
           <td id="ratioSum">0</td>
-          <td id="materialCostSum">0 원</td>
+          <td id="materialCostSum">0 원/ea</td>
           <td></td>
         </tr>
       </tfoot>
     </table>
+      <div class="section-subtotal">원재료비 <strong><span id="rawMaterialBaseCost">0</span>원/ea</strong></div>
+    </section>
 
-  
-
-    <!-- ✅ unit-cost 구조 정상화 -->
-    <div class="unit-cost-box">
-      <div class="unit-inline">
-          단위 원가
-          </span>
-
-          <span id="unitCostDisplay">0</span>
-
-          <span class="unit-suffix">
-          원 / ea
-          </span>
+    <section class="composition-section">
+      <div class="composition-heading">
+        <h4>부재료 구성</h4>
+        <div class="button-row compact-actions">
+          <button type="button" onclick="addSubRecipe()">부재료 추가</button>
+          <button type="button" class="secondary" onclick="resetSubRecipeTable()">부재료 초기화</button>
+        </div>
       </div>
-    </div>
+
+      <datalist id="subMaterialOptions"></datalist>
+      <table id="subRecipeTable" class="composition-table">
+        <thead>
+          <tr>
+            <th style="width:200px;">부재료</th>
+            <th style="width:60px;">코드</th>
+            <th style="width:160px;">단가(원/ea)</th>
+            <th style="width:100px;">배합비</th>
+            <th style="width:160px;">부재료비(원/ea)</th>
+            <th style="width:60px;" class="center">삭제</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3"><strong>부재료 합계</strong></td>
+            <td id="subRatioSum">0</td>
+            <td id="subMaterialCostSum">0 원/ea</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+      <div class="section-subtotal">부재료비 <strong><span id="subMaterialBaseCost">0</span>원/ea</strong></div>
+    </section>
+
+    <section class="loss-panel">
+      <h4>로스 반영 및 제품 재료비</h4>
+      <div class="loss-row">
+        <span>원재료비 <strong><span id="rawLossBaseText">0</span>원/ea</strong></span>
+        <span>÷</span>
+        <span>(1 - 로스 <input id="materialLossRate" type="number" min="0" max="99.99" step="0.1" value="0" oninput="updateProductMaterialCost()" /> %)</span>
+        <span>=</span>
+        <strong><span id="rawLossAppliedCost">0</span>원/ea</strong>
+      </div>
+      <div class="loss-row">
+        <span>부재료비 <strong><span id="subLossBaseText">0</span>원/ea</strong></span>
+        <span>÷</span>
+        <span>(1 - 로스 <input id="subMaterialLossRate" type="number" min="0" max="99.99" step="0.1" value="0" oninput="updateProductMaterialCost()" /> %)</span>
+        <span>=</span>
+        <strong><span id="subLossAppliedCost">0</span>원/ea</strong>
+      </div>
+      <div class="product-material-total">
+        제품 재료비 <strong><span id="unitCostDisplay">0</span>원/ea</strong>
+      </div>
+    </section>
 
     <div class="bottom-action">
       <button type="button" onclick="saveRecipe()">제품 저장</button>
@@ -380,8 +426,9 @@
             <th style="width:60px;">선택</th>
             <th>유형</th>
             <th>제품명</th>
-            <th class="right">원가(원/kg)</th>
-            <th class="right">단위원가(원/ea)</th>
+            <th class="right">원재료비(원/ea)</th>
+            <th class="right">부재료비(원/ea)</th>
+            <th class="right">제품 재료비(원/ea)</th>
             <th>날짜</th>
           </tr>
         </thead>
