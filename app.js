@@ -7,6 +7,7 @@ let products = JSON.parse(localStorage.getItem("products")) || [];
 let priceHistory = JSON.parse(localStorage.getItem("priceHistory")) || [];
 let productionCostRecords = JSON.parse(localStorage.getItem("productionCostRecords")) || [];
 let editingMaterialId = null;
+let editingSubMaterialId = null;
 let idleTimer = null;
 let warningTimer = null;
 
@@ -1126,8 +1127,8 @@ function calculateActualCost(showAlert = true) {
     return null;
   }
 
-  const materialCostWithLoss = materialCost / (1 - materialLossRate / 100);
-  const subMaterialCostWithLoss = subMaterialCost / (1 - subMaterialLossRate / 100);
+  const materialCostWithLoss = materialCost * (1 + materialLossRate / 100);
+  const subMaterialCostWithLoss = subMaterialCost * (1 + subMaterialLossRate / 100);
   const totalLaborCost = workerCount * workHours * hourlyLaborCost;
   const totalMfgCost = lineHours * hourlyMfgCost;
   const laborCostPerInputKg = totalLaborCost / actualInputKg;
@@ -1265,13 +1266,13 @@ window.deleteActualCostRecord = function (id) {
 // =============================
 
 function toggleAll(el) {
- document.querySelectorAll(".productCheck").forEach(cb => {
+ document.querySelectorAll("#quoteList .rowCheck").forEach(cb => {
     cb.checked = el.checked;
   });
 }
 
 function deleteSelected() {
-  const checked = Array.from(document.querySelectorAll(".rowCheck:checked"))
+  const checked = Array.from(document.querySelectorAll("#quoteList .rowCheck:checked"))
     .map(cb => Number(cb.value));
 
   if (!checked.length) {
@@ -1304,7 +1305,7 @@ window.deleteSelectedProducts = function () {
 };
 
 function loadSelected() {
-  const checked = document.querySelector(".rowCheck:checked");
+  const checked = document.querySelector("#quoteList .rowCheck:checked");
 
   if (!checked) {
     alert("하나 선택하세요.");
@@ -1375,6 +1376,7 @@ function clearSubMaterialInputs() {
   document.getElementById("subMaterialName").value = "";
   document.getElementById("subMaterialPrice").value = "";
   document.getElementById("subMaterialDate").value = "";
+  editingSubMaterialId = null;
 }
 
 // =============================
@@ -1390,9 +1392,8 @@ function saveSubMaterial() {
     alert("모든 항목 입력");
     return;
   }
-  // 🔥 이름 중복 체크
   const existsName = subMaterials.some(m =>
-    m.name.trim().toLowerCase() === name.toLowerCase()
+    m.id !== editingSubMaterialId && m.name.trim().toLowerCase() === name.toLowerCase()
   );
 
   if (existsName) {
@@ -1402,7 +1403,7 @@ function saveSubMaterial() {
 
   // 🔥 코드 중복 체크
   const existsCode = subMaterials.some(m =>
-    String(m.code) === String(code)
+    m.id !== editingSubMaterialId && String(m.code) === String(code)
   );
 
   if (existsCode) {
@@ -1410,17 +1411,23 @@ function saveSubMaterial() {
     return;
   }
 
-  subMaterials.push({
-    id: Date.now(),
-    code,
-    name,
-    price,
-    date
-  });
+  if (editingSubMaterialId !== null) {
+    const target = subMaterials.find(m => m.id === editingSubMaterialId);
+    if (!target) {
+      alert("수정할 부재료를 찾을 수 없습니다.");
+      editingSubMaterialId = null;
+      return;
+    }
+    Object.assign(target, { code, name, price, date });
+  } else {
+    subMaterials.push({ id: Date.now(), code, name, price, date });
+  }
 
+  editingSubMaterialId = null;
   saveAll();
   loadSubMaterials();
   loadSubPriceHistory("");
+  clearSubMaterialInputs();
 }
 
 // =============================
@@ -1462,7 +1469,7 @@ function loadSubMaterials() {
       <tr>
         <td>${i + 1}</td>
         <td>${m.code}</td>
-        <td>${m.name}</td>
+        <td class="product-link" onclick="editSubMaterial('${escapeJsString(m.code)}')" title="클릭하여 수정">${escapeHtml(m.name)}</td>
         <td>${formatNumber(m.price)} 원</td>
         <td>${m.date}</td>
         <td><button onclick="editSubMaterial('${m.code}')">수정</button></td>
@@ -1483,7 +1490,7 @@ function deleteSubMaterial(code) {
 }
 
 function editSubMaterial(code) {
-  const material = subMaterials.find(m => String(m.code) === String(code));
+  const material = getAllLatestSubMaterials().find(m => String(m.code) === String(code));
   if (!material) return;
 
   document.getElementById("subMaterialCode").value = material.code;
@@ -1491,10 +1498,8 @@ function editSubMaterial(code) {
   document.getElementById("subMaterialPrice").value = material.price;
   document.getElementById("subMaterialDate").value = material.date;
 
-  subMaterials = subMaterials.filter(m => m.code !== code);
-
-  saveAll();
-  loadSubMaterials();
+  editingSubMaterialId = material.id;
+  document.getElementById("subMaterialCode")?.focus();
 }
 
 // =============================
@@ -1652,7 +1657,7 @@ function readPercent(id) {
 }
 
 function applyLoss(cost, lossRate) {
-  return Number(cost || 0) / (1 - Number(lossRate || 0) / 100);
+  return Number(cost || 0) * (1 + Number(lossRate || 0) / 100);
 }
 
 function calculateFormCosts(data) {
@@ -1849,4 +1854,297 @@ window.exportSelectedProductExcel = function () {
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "제품 재료비");
   XLSX.writeFile(workbook, `제품_재료비_${new Date().toISOString().slice(0, 10)}.xlsx`);
+};
+
+// =============================
+// PRE-COST 견적 계산 v3
+// =============================
+function setText(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.innerText = value;
+}
+
+function getLocalDateString(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function makeQuoteNo() {
+  const date = (document.getElementById("quoteDate")?.value || getLocalDateString()).replaceAll("-", "");
+  const todayCount = quotes.filter(q => String(q.quoteNo || "").startsWith(`Q-${date}`)).length + 1;
+  return `Q-${date}-${String(todayCount).padStart(2, "0")}`;
+}
+
+window.refreshQuoteNo = function () {
+  const quoteNo = document.getElementById("quoteNo");
+  if (quoteNo) quoteNo.value = makeQuoteNo();
+  calculatePreCost(false);
+};
+
+function getOrderForecast(moq) {
+  const frequency = document.getElementById("orderFrequency")?.value || "monthly1";
+  const customAnnual = getNumberValue("customAnnualQty");
+  if (frequency === "once") return { monthly: 0, annual: moq, label: "일회성" };
+  if (frequency === "monthly2") return { monthly: moq * 2, annual: moq * 24, label: "월 2회" };
+  if (frequency === "weekly1") return { monthly: moq * 52 / 12, annual: moq * 52, label: "주 1회" };
+  if (frequency === "custom") return { monthly: customAnnual / 12, annual: customAnnual, label: "직접 입력" };
+  return { monthly: moq, annual: moq * 12, label: "월 1회" };
+}
+
+window.updateOrderForecast = function () {
+  const frequency = document.getElementById("orderFrequency")?.value || "monthly1";
+  const customField = document.getElementById("customAnnualField");
+  if (customField) customField.hidden = frequency !== "custom";
+  calculatePreCost(false);
+};
+
+function updateMoqStatus(moq, standardBatch) {
+  const status = document.getElementById("moqStatus");
+  if (!status) return;
+  if (moq <= 0 || standardBatch <= 0) {
+    status.innerHTML = "-";
+    return;
+  }
+  if (moq >= standardBatch) {
+    status.innerHTML = `충족 <em class="status-good">적합</em>`;
+  } else {
+    const shortage = standardBatch - moq;
+    status.innerHTML = `미충족 <em class="status-review">${formatNumber(shortage)}ea 부족</em>`;
+  }
+}
+
+function loadCalcProductsV3() {
+  const select = document.getElementById("calcProductSelect");
+  if (!select) return;
+  const selected = select.value;
+  select.innerHTML = `<option value="">선택</option>` + products.map(p =>
+    `<option value="${p.id}">${escapeHtml(p.name || "")}</option>`
+  ).join("");
+  if (selected && products.some(p => String(p.id) === String(selected))) select.value = selected;
+}
+
+window.loadMaterialCostFromProduct = function () {
+  const productId = document.getElementById("calcProductSelect")?.value || "";
+  const product = products.find(p => String(p.id) === String(productId));
+  const volume = document.getElementById("quoteProductVolume");
+  if (volume) volume.value = product ? `${formatNumber(product.volume || 0)} ${product.unit || "g"}` : "";
+  calculatePreCost(false);
+};
+
+function calculatePreCost(showAlert = true) {
+  const productId = document.getElementById("calcProductSelect")?.value || "";
+  const product = products.find(p => String(p.id) === String(productId));
+  const moq = getNumberValue("moqQty");
+  const standardBatch = getNumberValue("standardBatchQty");
+  const expectedYieldRate = getNumberValue("expectedYieldRate");
+  const sgaRate = getNumberValue("sgaRate");
+  const marginRate = getNumberValue("marginRate");
+
+  if (!product) {
+    if (showAlert) alert("제품을 선택하세요.");
+    return null;
+  }
+  if (moq <= 0) {
+    if (showAlert) alert("견적 기준 수량(MOQ)을 입력하세요.");
+    return null;
+  }
+  if (expectedYieldRate <= 0 || expectedYieldRate > 100) {
+    if (showAlert) alert("예상 공정수율은 0% 초과 100% 이하로 입력하세요.");
+    return null;
+  }
+  if (sgaRate < 0 || marginRate < 0 || sgaRate + marginRate >= 100) {
+    if (showAlert) alert("판관비율과 목표이익률의 합계는 0% 이상 100% 미만이어야 합니다.");
+    return null;
+  }
+
+  const live = calculateLiveProductCosts(product);
+  const rawMaterialCost = Number(live.rawMaterialCost || 0);
+  const subMaterialCost = Number(live.subMaterialCost || 0);
+  const productMaterialCost = rawMaterialCost + subMaterialCost;
+  const yieldAdjustedMaterialCost = productMaterialCost / (expectedYieldRate / 100);
+
+  const workerCount = getNumberValue("workerCount");
+  const workHours = getNumberValue("workHours");
+  const hourlyLaborCost = getNumberValue("hourlyLaborCost");
+  const lineHours = getNumberValue("lineHours");
+  const hourlyMfgCost = getNumberValue("hourlyMfgCost");
+  const batchLaborCost = workerCount * workHours * hourlyLaborCost;
+  const laborCostEa = batchLaborCost / moq;
+  const batchMfgCost = lineHours * hourlyMfgCost;
+  const mfgCostEa = batchMfgCost / moq;
+
+  const logisticsBatchCost = getNumberValue("logisticsBatchCost");
+  const logisticsCostEa = logisticsBatchCost / moq;
+  const batchManHours = workerCount * workHours;
+  const indirectRate = getNumberValue("indirectRate");
+  const batchIndirectCost = batchManHours * indirectRate;
+  const indirectCostEa = batchIndirectCost / moq;
+  const batchExtraCost = getNumberValue("batchExtraCost");
+  const batchExtraCostEa = batchExtraCost / moq;
+
+  const forecast = getOrderForecast(moq);
+  const oneTimeCost = getNumberValue("oneTimeCost");
+  const oneTimeMode = document.getElementById("oneTimeMode")?.value || "separate";
+  let oneTimeCostEa = 0;
+  if (oneTimeMode === "first") oneTimeCostEa = oneTimeCost / moq;
+  if (oneTimeMode === "annual" && forecast.annual > 0) oneTimeCostEa = oneTimeCost / forecast.annual;
+
+  const totalCost = yieldAdjustedMaterialCost + laborCostEa + mfgCostEa + logisticsCostEa + indirectCostEa + batchExtraCostEa + oneTimeCostEa;
+  const quotePrice = totalCost / (1 - (sgaRate + marginRate) / 100);
+  const sgaCostEa = quotePrice * sgaRate / 100;
+  const profitAmountEa = quotePrice * marginRate / 100;
+  const costRateOfSales = quotePrice > 0 ? totalCost / quotePrice * 100 : 0;
+  const costRatio = value => totalCost > 0 ? value / totalCost * 100 : 0;
+  const oneTimeLabel = oneTimeMode === "separate" ? "별도 청구" : oneTimeMode === "company" ? "회사 부담" : `${formatNumber(Math.round(oneTimeCostEa))}원/ea`;
+
+  const values = {
+    quoteRawCost: rawMaterialCost, quoteSubCost: subMaterialCost, quoteMaterialCost: productMaterialCost,
+    batchLaborCost, laborCostEa, batchMfgCost, mfgCostEa, logisticsCostEa,
+    batchManHours, batchIndirectCost, indirectCostEa, batchExtraCostEa, oneTimeCostEa,
+    resultMaterialCost: productMaterialCost, resultYieldMaterialCost: yieldAdjustedMaterialCost,
+    resultLaborCost: laborCostEa, resultMfgCost: mfgCostEa, resultLogisticsCost: logisticsCostEa,
+    resultIndirectCost: indirectCostEa, resultExtraCost: batchExtraCostEa,
+    totalCostText: totalCost, result: quotePrice, formulaTotalCost: totalCost,
+    sgaCostEa, profitAmountEa
+  };
+  Object.entries(values).forEach(([id, value]) => setText(id, formatNumber(Math.round(value))));
+  setText("formulaMargin", Number(marginRate).toLocaleString("ko-KR"));
+  setText("formulaSga", Number(sgaRate).toLocaleString("ko-KR"));
+  setText("sgaRateText", Number(sgaRate).toFixed(2));
+  setText("profitRateText", Number(marginRate).toFixed(2));
+  setText("costRateOfSales", costRateOfSales.toFixed(2));
+  setText("ratioMaterialCost", costRatio(productMaterialCost).toFixed(2));
+  setText("ratioYieldMaterialCost", costRatio(yieldAdjustedMaterialCost).toFixed(2));
+  setText("ratioLaborCost", costRatio(laborCostEa).toFixed(2));
+  setText("ratioMfgCost", costRatio(mfgCostEa).toFixed(2));
+  setText("ratioLogisticsCost", costRatio(logisticsCostEa).toFixed(2));
+  setText("ratioIndirectCost", costRatio(indirectCostEa).toFixed(2));
+  setText("ratioExtraCost", costRatio(batchExtraCostEa).toFixed(2));
+  setText("ratioOneTimeCost", oneTimeCostEa > 0 ? `${costRatio(oneTimeCostEa).toFixed(2)}%` : "-");
+  setText("resultOneTimeText", oneTimeLabel);
+  setText("kpiMoq", `${formatNumber(Math.round(moq))} ea`);
+  setText("monthlyExpectedQty", `${formatNumber(Math.round(forecast.monthly))} ea`);
+  setText("annualExpectedQtyText", `${formatNumber(Math.round(forecast.annual))} ea`);
+  const annualInput = document.getElementById("annualExpectedQty");
+  if (annualInput) annualInput.value = `${formatNumber(Math.round(forecast.annual))} ea`;
+  updateMoqStatus(moq, standardBatch);
+
+  return {
+    productId, productName: product.name || "", productType: product.type || "", productVolume: product.volume || 0,
+    productUnit: product.unit || "g", quoteDate: document.getElementById("quoteDate")?.value || "",
+    quoteNo: document.getElementById("quoteNo")?.value || "", moq, standardBatch, expectedYieldRate,
+    orderFrequency: document.getElementById("orderFrequency")?.value || "monthly1", orderFrequencyLabel: forecast.label,
+    monthlyExpectedQty: forecast.monthly, annualExpectedQty: forecast.annual,
+    rawMaterialCost, subMaterialCost, productMaterialCost, yieldAdjustedMaterialCost,
+    workerCount, workHours, hourlyLaborCost, batchLaborCost, laborCostEa,
+    lineHours, hourlyMfgCost, batchMfgCost, mfgCostEa,
+    logisticsBatchCost, logisticsCostEa, batchManHours, indirectRate, batchIndirectCost, indirectCostEa,
+    batchExtraReason: document.getElementById("batchExtraReason")?.value.trim() || "", batchExtraCost, batchExtraCostEa,
+    oneTimeReason: document.getElementById("oneTimeReason")?.value.trim() || "", oneTimeCost, oneTimeMode, oneTimeCostEa,
+    totalCost, sgaRate, sgaCostEa, marginRate, profitAmountEa, costRateOfSales, quotePrice, vatExcluded: true
+  };
+}
+
+window.calculatePreCost = calculatePreCost;
+
+window.savePreCostQuote = function () {
+  const calculated = calculatePreCost(true);
+  if (!calculated) return;
+  if (!calculated.quoteDate) {
+    alert("견적일을 입력하세요.");
+    return;
+  }
+  if (!calculated.quoteNo) calculated.quoteNo = makeQuoteNo();
+  const existingIndex = quotes.findIndex(q => q.quoteNo === calculated.quoteNo);
+  const saved = { id: existingIndex >= 0 ? quotes[existingIndex].id : Date.now(), ...calculated, savedAt: new Date().toISOString() };
+  if (existingIndex >= 0) quotes.splice(existingIndex, 1, saved);
+  else quotes.push(saved);
+  saveAll();
+  loadQuotes();
+  alert("견적이 저장되었습니다. 5 견적 조회에서 확인할 수 있습니다.");
+};
+
+function initializePreCostForm() {
+  loadCalcProductsV3();
+  const quoteDate = document.getElementById("quoteDate");
+  if (quoteDate && !quoteDate.value) quoteDate.value = getLocalDateString();
+  const quoteNo = document.getElementById("quoteNo");
+  if (quoteNo && !quoteNo.value) quoteNo.value = makeQuoteNo();
+  updateOrderForecast();
+}
+
+function populatePreCostForm(q) {
+  const mapping = {
+    quoteDate: q.quoteDate, quoteNo: q.quoteNo, moqQty: q.moq, standardBatchQty: q.standardBatch,
+    expectedYieldRate: q.expectedYieldRate, workerCount: q.workerCount, workHours: q.workHours,
+    hourlyLaborCost: q.hourlyLaborCost, lineHours: q.lineHours, hourlyMfgCost: q.hourlyMfgCost,
+    logisticsBatchCost: q.logisticsBatchCost, indirectRate: q.indirectRate,
+    batchExtraReason: q.batchExtraReason, batchExtraCost: q.batchExtraCost,
+    oneTimeReason: q.oneTimeReason, oneTimeCost: q.oneTimeCost, sgaRate: q.sgaRate ?? 0, marginRate: q.marginRate
+  };
+  Object.entries(mapping).forEach(([id, value]) => {
+    const el = document.getElementById(id);
+    if (el) el.value = value ?? "";
+  });
+  loadCalcProductsV3();
+  const productSelect = document.getElementById("calcProductSelect");
+  if (productSelect) productSelect.value = q.productId || "";
+  const frequency = document.getElementById("orderFrequency");
+  if (frequency) frequency.value = q.orderFrequency || "monthly1";
+  const oneTimeMode = document.getElementById("oneTimeMode");
+  if (oneTimeMode) oneTimeMode.value = q.oneTimeMode || "separate";
+  if (q.orderFrequency === "custom") {
+    const custom = document.getElementById("customAnnualQty");
+    if (custom) custom.value = q.annualExpectedQty || 0;
+  }
+  loadMaterialCostFromProduct();
+  updateOrderForecast();
+}
+
+window.loadQuote = function (id) {
+  const q = quotes.find(item => String(item.id) === String(id));
+  if (!q) return;
+  showPage("calc");
+  populatePreCostForm(q);
+};
+
+window.loadQuotes = function () {
+  const list = document.getElementById("quoteList");
+  if (!list) return;
+  const keyword = (document.getElementById("quoteSearch")?.value || "").trim().toLowerCase();
+  const filtered = quotes.filter(q => !keyword ||
+    String(q.productName || q.name || "").toLowerCase().includes(keyword) ||
+    String(q.quoteNo || "").toLowerCase().includes(keyword)
+  ).sort((a, b) => new Date(b.savedAt || b.quoteDate || b.date) - new Date(a.savedAt || a.quoteDate || a.date));
+  if (!filtered.length) {
+    list.innerHTML = `<tr><td colspan="12">저장된 견적이 없습니다.</td></tr>`;
+    return;
+  }
+  list.innerHTML = filtered.map(q => `
+    <tr>
+      <td><input type="checkbox" class="rowCheck" value="${q.id}"></td>
+      <td>${escapeHtml(q.quoteNo || "-")}</td>
+      <td>${escapeHtml(q.quoteDate || q.date || "-")}</td>
+      <td>${escapeHtml(q.productName || q.name || "-")}</td>
+      <td class="right">${formatNumber(Math.round(q.moq || 0))} ea</td>
+      <td>${escapeHtml(q.orderFrequencyLabel || "-")}</td>
+      <td class="right">${formatNumber(Math.round(q.totalCost || q.cost || 0))}원/ea</td>
+      <td>${formatNumber(q.sgaRate || 0)}%</td>
+      <td>${formatNumber(q.marginRate || 0)}%</td>
+      <td class="right product-cost-cell">${formatNumber(Math.round(q.quotePrice || q.unitCost || 0))}원/ea<br><small>부가세 별도</small></td>
+      <td>${q.savedAt ? new Date(q.savedAt).toLocaleString("ko-KR") : "-"}</td>
+      <td><button type="button" onclick="loadQuote('${q.id}')">상세보기</button></td>
+    </tr>`).join("");
+};
+
+const showPageBeforePreCost = window.showPage;
+window.showPage = function (id) {
+  showPageBeforePreCost(id);
+  document.querySelectorAll(".menu button[data-page]").forEach(button =>
+    button.classList.toggle("active", button.dataset.page === id)
+  );
+  if (id === "calc") initializePreCostForm();
+  if (id === "history") loadQuotes();
 };

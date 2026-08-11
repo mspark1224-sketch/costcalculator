@@ -28,11 +28,11 @@
     </div>
  
   <div class="menu">
-  <button type="button" onclick="showPage('db')">1 원재료 DB</button>
-  <button type="button" onclick="showPage('subDb')">2 부재료 DB</button>
-  <button type="button" onclick="showPage('recipe')">3 배합표</button>
-  <button type="button" onclick="showPage('calc')">4 원가 계산</button>
-  <button type="button" onclick="showPage('history')">5 견적 조회</button>
+  <button type="button" data-page="db" onclick="showPage('db')">1 원재료 DB</button>
+  <button type="button" data-page="subDb" onclick="showPage('subDb')">2 부재료 DB</button>
+  <button type="button" data-page="recipe" onclick="showPage('recipe')">3 배합표</button>
+  <button type="button" data-page="calc" onclick="showPage('calc')">4 원가 계산</button>
+  <button type="button" data-page="history" onclick="showPage('history')">5 견적 조회</button>
 </div>
 
     <!-- ===================== -->
@@ -376,15 +376,15 @@
       <h4>로스 반영 및 제품 재료비</h4>
       <div class="loss-row">
         <span>원재료비 <strong><span id="rawLossBaseText">0</span>원/ea</strong></span>
-        <span>÷</span>
-        <span>(1 - 로스 <input id="materialLossRate" type="number" min="0" max="99.99" step="0.1" value="0" oninput="updateProductMaterialCost()" /> %)</span>
+        <span>×</span>
+        <span>(1 + 예상 로스 <input id="materialLossRate" type="number" min="0" max="99.99" step="0.1" value="0" oninput="updateProductMaterialCost()" /> %)</span>
         <span>=</span>
         <strong><span id="rawLossAppliedCost">0</span>원/ea</strong>
       </div>
       <div class="loss-row">
         <span>부재료비 <strong><span id="subLossBaseText">0</span>원/ea</strong></span>
-        <span>÷</span>
-        <span>(1 - 로스 <input id="subMaterialLossRate" type="number" min="0" max="99.99" step="0.1" value="0" oninput="updateProductMaterialCost()" /> %)</span>
+        <span>×</span>
+        <span>(1 + 예상 로스 <input id="subMaterialLossRate" type="number" min="0" max="99.99" step="0.1" value="0" oninput="updateProductMaterialCost()" /> %)</span>
         <span>=</span>
         <strong><span id="subLossAppliedCost">0</span>원/ea</strong>
       </div>
@@ -442,145 +442,96 @@
     <!-- ===================== -->
     <!-- 원가 계산 -->
     <!-- ===================== -->
-    <div id="calc" class="page" style="display:none;">
-      <h2>배치별 실제원가 계산</h2>
-
-      <div class="card calc-form-card">
-        <h3 class="section-title">1. 생산 기본정보</h3>
-        <div class="calc-grid">
-          <div class="field">
-            <label for="calcProductSelect">제품 선택</label>
-            <select id="calcProductSelect" onchange="loadMaterialCostFromProduct()">
-              <option value="">선택</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="batchDate">생산일</label>
-            <input id="batchDate" type="date" />
-          </div>
-          <div class="field">
-            <label for="batchNo">배치번호</label>
-            <input id="batchNo" type="text" placeholder="예: A-260810-01" />
-          </div>
-          <div class="field">
-            <label for="actualInputKg">실제 총 투입량(kg)</label>
-            <input id="actualInputKg" type="number" min="0" step="0.001" />
-          </div>
-          <div class="field">
-            <label for="goodOutputKg">정상 완제품 생산량(kg)</label>
-            <input id="goodOutputKg" type="number" min="0" step="0.001" />
-          </div>
-        </div>
+    <div id="calc" class="page precost-page" style="display:none;">
+      <div class="page-title-row">
+        <h2>PRE-COST 견적 계산</h2>
+        <div class="input-legend"><span class="legend-input"></span> 직접 입력 <span class="legend-auto"></span> 자동 계산 / DB 연동</div>
       </div>
 
-      <div class="card calc-form-card">
-        <h3 class="section-title">2. 재료비 및 로스</h3>
-        <div class="calc-grid">
-          <div class="field">
-            <label for="materialCostInput">원재료비(원/kg, 배합표 자동)</label>
-            <input id="materialCostInput" type="number" readonly />
-          </div>
-          <div class="field">
-            <label for="materialLossRate">원료 로스율(%)</label>
-            <input id="materialLossRate" type="number" min="0" max="99.99" step="0.01" value="0" />
-          </div>
-          <div class="field">
-            <label for="subMaterialCostInput">부재료비(원/kg)</label>
-            <input id="subMaterialCostInput" type="number" min="0" step="0.01" value="0" />
-          </div>
-          <div class="field">
-            <label for="subMaterialLossRate">부재료 로스율(%)</label>
-            <input id="subMaterialLossRate" type="number" min="0" max="99.99" step="0.01" value="0" />
-          </div>
-          <div class="field">
-            <label for="packagingCostInput">포장재비(원/kg)</label>
-            <input id="packagingCostInput" type="number" min="0" step="0.01" value="0" />
-          </div>
+      <section class="card precost-card">
+        <h3 class="section-title">1. 견적 및 생산 기본정보</h3>
+        <div class="quote-basic-grid">
+          <div class="field"><label>제품 선택</label><select id="calcProductSelect" class="manual-input" onchange="loadMaterialCostFromProduct()"><option value="">선택</option></select></div>
+          <div class="field"><label>견적일</label><input id="quoteDate" class="manual-input" type="date" onchange="refreshQuoteNo()" /></div>
+          <div class="field"><label>견적번호</label><input id="quoteNo" class="auto-input" type="text" readonly /></div>
+          <div class="field"><label>제품 내용량</label><input id="quoteProductVolume" class="auto-input" type="text" readonly /></div>
+          <div class="field"><label>견적 기준 수량(MOQ)</label><input id="moqQty" class="manual-input" type="number" min="1" value="20000" oninput="calculatePreCost(false)" /></div>
+          <div class="field"><label>표준 배치 생산수량 (직접 입력)</label><input id="standardBatchQty" class="manual-input" type="number" min="1" value="20000" oninput="calculatePreCost(false)" /></div>
+          <div class="field"><label>예상 발주주기</label><select id="orderFrequency" class="manual-input" onchange="updateOrderForecast()"><option value="once">일회성</option><option value="monthly1" selected>월 1회</option><option value="monthly2">월 2회</option><option value="weekly1">주 1회</option><option value="custom">직접 입력</option></select><small>일회성 · 월 1회 · 월 2회 · 주 1회 · 직접 입력</small></div>
+          <div class="field" id="customAnnualField" hidden><label>연간 예상수량 (직접 입력)</label><input id="customAnnualQty" class="manual-input" type="number" min="0" oninput="updateOrderForecast()" /></div>
+          <div class="field"><label>예상 공정수율(%)</label><input id="expectedYieldRate" class="manual-input" type="number" min="0.01" max="100" step="0.1" value="100" oninput="calculatePreCost(false)" /></div>
+          <div class="field"><label>연간 예상수량</label><input id="annualExpectedQty" class="auto-input" type="text" readonly /></div>
         </div>
-      </div>
+        <div class="quote-kpi-grid">
+          <div><span>1회 생산 MOQ</span><strong id="kpiMoq">0 ea</strong></div>
+          <div><span>MOQ 충족 여부</span><strong id="moqStatus">-</strong></div>
+          <div><span>월 예상수량</span><strong id="monthlyExpectedQty">0 ea</strong></div>
+          <div><span>연간 예상수량</span><strong id="annualExpectedQtyText">0 ea</strong></div>
+        </div>
+        <p class="helper-text">1회 생산조건과 연간 예상물량을 구분하여 견적합니다.</p>
+      </section>
 
-      <div class="card calc-form-card">
-        <h3 class="section-title">3. 작업 및 제조 raw data</h3>
-        <div class="calc-grid">
-          <div class="field">
-            <label for="workerCount">작업 인원(명)</label>
-            <input id="workerCount" type="number" min="0" step="1" value="0" />
-          </div>
-          <div class="field">
-            <label for="workHours">인당 작업시간(시간)</label>
-            <input id="workHours" type="number" min="0" step="0.1" value="0" />
-          </div>
-          <div class="field">
-            <label for="hourlyLaborCost">인당 시간당 인건비(원)</label>
-            <input id="hourlyLaborCost" type="number" min="0" step="1" value="0" />
-          </div>
-          <div class="field">
-            <label for="lineHours">라인 가동시간(시간)</label>
-            <input id="lineHours" type="number" min="0" step="0.1" value="0" />
-          </div>
-          <div class="field">
-            <label for="hourlyMfgCost">시간당 제조경비(원)</label>
-            <input id="hourlyMfgCost" type="number" min="0" step="1" value="0" />
-          </div>
-          <div class="field">
-            <label for="logisticsCostInput">물류비(원/kg)</label>
-            <input id="logisticsCostInput" type="number" min="0" step="0.01" value="0" />
-          </div>
-          <div class="field">
-            <label for="otherCostInput">기타비용(원/kg)</label>
-            <input id="otherCostInput" type="number" min="0" step="0.01" value="0" />
-          </div>
-          <div class="field">
-            <label for="marginRate">목표 마진율(%)</label>
-            <input id="marginRate" type="number" min="0" max="99.99" step="0.01" value="0" />
-          </div>
+      <section class="card precost-card">
+        <h3 class="section-title">2. 제품 재료비 <small>(배합표 자동)</small></h3>
+        <div class="summary-grid three">
+          <div><span>원재료비(예상 로스 포함)</span><strong><span id="quoteRawCost">0</span>원/ea</strong></div>
+          <div><span>부재료비(예상 로스 포함)</span><strong><span id="quoteSubCost">0</span>원/ea</strong></div>
+          <div><span>제품 재료비</span><strong><span id="quoteMaterialCost">0</span>원/ea</strong></div>
         </div>
+      </section>
 
-        <div class="button-row">
-          <button type="button" onclick="calculateActualCost()">계산</button>
-          <button type="button" onclick="saveActualCostRecord()">raw data 저장</button>
+      <section class="card precost-card">
+        <h3 class="section-title">3. 인건비 및 제조경비</h3>
+        <div class="split-cost-grid">
+          <div class="cost-group"><h4>인건비</h4><div class="cost-input-grid three"><div class="field"><label>예상 작업 인원(명)</label><input id="workerCount" class="manual-input" type="number" min="0" value="0" oninput="calculatePreCost(false)" /></div><div class="field"><label>예상 작업시간(시간)</label><input id="workHours" class="manual-input" type="number" min="0" step="0.1" value="0" oninput="calculatePreCost(false)" /></div><div class="field"><label>인당 시간당 인건비(원)</label><input id="hourlyLaborCost" class="manual-input" type="number" min="0" value="0" oninput="calculatePreCost(false)" /></div></div><div class="summary-grid two compact"><div><span>예상 배치 인건비</span><strong><span id="batchLaborCost">0</span>원</strong></div><div><span>인건비</span><strong><span id="laborCostEa">0</span>원/ea</strong></div></div></div>
+          <div class="cost-group"><h4>제조경비</h4><div class="cost-input-grid two"><div class="field"><label>예상 라인 가동시간(시간)</label><input id="lineHours" class="manual-input" type="number" min="0" step="0.1" value="0" oninput="calculatePreCost(false)" /></div><div class="field"><label>시간당 제조경비(원)</label><input id="hourlyMfgCost" class="manual-input" type="number" min="0" value="0" oninput="calculatePreCost(false)" /></div></div><div class="summary-grid two compact"><div><span>예상 배치 제조경비</span><strong><span id="batchMfgCost">0</span>원</strong></div><div><span>제조경비</span><strong><span id="mfgCostEa">0</span>원/ea</strong></div></div></div>
         </div>
-      </div>
+      </section>
 
-      <div class="card">
-        <h3 class="section-title">4. 계산 결과</h3>
-        <p>제품명: <strong id="calcProductName">-</strong></p>
-        <p>로스 반영 원재료비: <strong><span id="materialCostText">0</span> 원/kg</strong></p>
-        <p>로스 반영 부재료비: <strong><span id="subMaterialCostText">0</span> 원/kg</strong></p>
-        <p>인건비: <strong><span id="laborCostText">0</span> 원/kg</strong></p>
-        <p>제조경비: <strong><span id="mfgCostText">0</span> 원/kg</strong></p>
-        <p>라인수율: <strong><span id="lineYieldText">0</span>%</strong></p>
-        <p>생산원가: <strong><span id="productionCostText">0</span> 원/kg</strong></p>
-        <p>정상제품 제조원가: <strong><span id="normalProductCostText">0</span> 원/kg</strong></p>
-        <p>총원가: <strong><span id="totalCostText">0</span> 원/kg</strong></p>
-        <p>견적가: <strong><span id="result">0</span> 원/kg</strong></p>
-      </div>
+      <section class="card precost-card compact-card"><h3 class="section-title">4. 물류비</h3><div class="inline-cost-row"><div class="field"><label>MOQ 출고 물류비(원)</label><input id="logisticsBatchCost" class="manual-input" type="number" min="0" value="0" oninput="calculatePreCost(false)" /></div><div class="auto-result"><span>물류비</span><strong><span id="logisticsCostEa">0</span>원/ea</strong></div></div></section>
 
-      <div class="card">
-        <h3 class="section-title">5. 배치별 실제원가 raw data</h3>
-        <div class="search-row">
-          <input id="actualCostSearch" type="text" placeholder="제품명 또는 배치번호 검색" oninput="loadActualCostRecords()" />
-          <button type="button" onclick="loadActualCostRecords()">검색</button>
+      <section class="card precost-card">
+        <h3 class="section-title">5. 간접비 및 추가비용</h3>
+        <div class="extra-cost-grid">
+          <div class="cost-group"><h4>A. 간접비 (인시 기준)</h4><div class="cost-input-grid four"><div class="field"><label>기준 간접비율(원/인시)</label><input id="indirectRate" class="manual-input" type="number" min="0" value="0" oninput="calculatePreCost(false)" /></div><div class="auto-result"><span>예상 배치 투입 인시</span><strong><span id="batchManHours">0</span> 인시</strong></div><div class="auto-result"><span>예상 배치 간접비</span><strong><span id="batchIndirectCost">0</span>원</strong></div><div class="auto-result"><span>간접비</span><strong><span id="indirectCostEa">0</span>원/ea</strong></div></div></div>
+          <div class="cost-group"><h4>B. 배치별 추가비용</h4><div class="cost-input-grid three"><div class="field"><label>비용 사유</label><input id="batchExtraReason" class="manual-input" type="text" placeholder="예: 외부 미생물 검사" /></div><div class="field"><label>배치별 추가비용(원)</label><input id="batchExtraCost" class="manual-input" type="number" min="0" value="0" oninput="calculatePreCost(false)" /></div><div class="auto-result"><span>추가비용</span><strong><span id="batchExtraCostEa">0</span>원/ea</strong></div></div></div>
+          <div class="cost-group"><h4>C. 초기 일회성 비용</h4><div class="cost-input-grid four"><div class="field"><label>비용 사유</label><input id="oneTimeReason" class="manual-input" type="text" placeholder="예: 금형 제작비" /></div><div class="field"><label>일회성 비용(원)</label><input id="oneTimeCost" class="manual-input" type="number" min="0" value="0" oninput="calculatePreCost(false)" /></div><div class="field"><label>반영 방식</label><select id="oneTimeMode" class="manual-input" onchange="calculatePreCost(false)"><option value="separate">별도 청구</option><option value="first">최초 발주수량 반영</option><option value="annual">연간 예상수량 배부</option><option value="company">회사 부담</option></select></div><div class="auto-result"><span>제품단가 반영</span><strong><span id="oneTimeCostEa">0</span>원/ea</strong></div></div><small>개발비·금형비 등 최초 1회 발생 비용</small></div>
         </div>
-        <div class="table-wrap">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>생산일</th>
-                <th>배치번호</th>
-                <th>제품명</th>
-                <th>실제 투입량</th>
-                <th>정상 생산량</th>
-                <th>라인수율</th>
-                <th>총원가</th>
-                <th>견적가</th>
-                <th>삭제</th>
-              </tr>
-            </thead>
-            <tbody id="actualCostRecordList"></tbody>
-          </table>
+      </section>
+
+      <section class="card precost-card result-section">
+        <h3 class="section-title">6. 계산 결과 및 견적가</h3>
+        <div class="executive-result-grid">
+          <div class="cost-breakdown">
+            <div class="breakdown-head"><span>항목</span><strong>원가(원/ea)</strong><b>총원가 구성비</b></div>
+            <div><span>제품 재료비 <small>(수율 반영 전·참고)</small></span><strong><span id="resultMaterialCost">0</span>원</strong><b><span id="ratioMaterialCost">0.00</span>%*</b></div>
+            <div><span>공정수율 반영 재료비</span><strong><span id="resultYieldMaterialCost">0</span>원</strong><b><span id="ratioYieldMaterialCost">0.00</span>%</b></div>
+            <div><span>인건비</span><strong><span id="resultLaborCost">0</span>원</strong><b><span id="ratioLaborCost">0.00</span>%</b></div>
+            <div><span>제조경비</span><strong><span id="resultMfgCost">0</span>원</strong><b><span id="ratioMfgCost">0.00</span>%</b></div>
+            <div><span>물류비</span><strong><span id="resultLogisticsCost">0</span>원</strong><b><span id="ratioLogisticsCost">0.00</span>%</b></div>
+            <div><span>간접비</span><strong><span id="resultIndirectCost">0</span>원</strong><b><span id="ratioIndirectCost">0.00</span>%</b></div>
+            <div><span>배치별 추가비용</span><strong><span id="resultExtraCost">0</span>원</strong><b><span id="ratioExtraCost">0.00</span>%</b></div>
+            <div><span>초기 일회성 비용</span><strong id="resultOneTimeText">별도 청구</strong><b><span id="ratioOneTimeCost">-</span></b></div>
+            <div class="total-cost"><span>총원가</span><strong><span id="totalCostText">0</span>원/ea</strong><b>100.00%</b></div>
+            <p class="breakdown-note">* 수율 반영 전 제품 재료비는 참고값으로 구성비 합계에 포함하지 않습니다.</p>
+          </div>
+          <div class="final-quote-panel">
+            <div class="rate-input-grid">
+              <div class="field"><label>판관비율(매출액 대비, %)</label><input id="sgaRate" class="manual-input large-input" type="number" min="0" max="99.99" step="0.1" value="0" oninput="calculatePreCost(false)" /></div>
+              <div class="field"><label>목표이익률(매출액 대비, %)</label><input id="marginRate" class="manual-input large-input" type="number" min="0" max="99.99" step="0.1" value="20" oninput="calculatePreCost(false)" /></div>
+            </div>
+            <div class="sales-composition">
+              <h4>판매가 구성</h4>
+              <div><span>원가율</span><strong><span id="costRateOfSales">0.00</span>%</strong></div>
+              <div><span>판관비율</span><strong><span id="sgaRateText">0.00</span>%</strong><small><span id="sgaCostEa">0</span>원/ea</small></div>
+              <div><span>목표이익률</span><strong><span id="profitRateText">0.00</span>%</strong><small><span id="profitAmountEa">0</span>원/ea</small></div>
+            </div>
+            <div class="final-price"><span>최종 견적가</span><strong><span id="result">0</span>원/ea</strong><em>부가세 별도</em></div>
+            <p>총원가 <span id="formulaTotalCost">0</span>원 ÷ (1 - 판관비율 <span id="formulaSga">0</span>% - 목표이익률 <span id="formulaMargin">0</span>%)</p>
+          </div>
         </div>
-      </div>
+      </section>
+      <div class="quote-actions"><span>견적 저장 시 5 견적 조회에 반영됩니다.</span><button type="button" class="secondary-action" onclick="calculatePreCost()">계산</button><button type="button" class="primary-action" onclick="savePreCostQuote()">견적 저장</button></div>
     </div>
 
     <!-- ===================== -->
@@ -590,14 +541,11 @@
       <h2>견적 조회</h2>
 
       <div class="card">
-        <div class="top-actions">
-  <button onclick="loadSelected()">선택 불러오기</button>
-  <button onclick="deleteSelected()">선택 삭제</button>
-</div>
+        <div class="top-actions"><button type="button" onclick="loadSelected()">선택 불러오기</button><button type="button" class="danger" onclick="deleteSelected()">선택 삭제</button></div>
         <input
           id="quoteSearch"
           type="text"
-          placeholder="제품명 검색"
+          placeholder="제품명 또는 견적번호 검색"
           oninput="loadQuotes()"
         />
 
@@ -607,10 +555,7 @@
               <th style="width:40px;">
   <input type="checkbox" id="selectAll" onclick="toggleAll(this)">
 </th>
-              <th>제품명</th>
-              <th>견적가</th>
-              <th>날짜</th>
-              <th>삭제</th>
+              <th>견적번호</th><th>견적일</th><th>제품명</th><th>MOQ</th><th>예상 발주주기</th><th>총원가</th><th>판관비율</th><th>목표이익률</th><th>최종 견적가</th><th>저장일시</th><th>상세</th>
             </tr>
           </thead>
           <tbody id="quoteList"></tbody>
